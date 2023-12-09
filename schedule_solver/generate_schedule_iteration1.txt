@@ -1,0 +1,47 @@
+def generate_schedule(courses, professors):
+    solver = pywraplp.Solver.CreateSolver('SCIP') 
+
+    x = {}
+    for i, course in enumerate(courses):
+        for j, professor in enumerate(professors):
+            x[i, j] = solver.IntVar(0, 1, f'x_{i}_{j}')
+
+    # Constraints: Avoid overlap and respect availability
+    for j, professor in enumerate(professors):
+        for day, time_slots in professor['availability'].items():
+            print(day, time_slots)
+            for i, course in enumerate(courses):
+                if course['days'] == day:
+                    for start, end in time_slots:
+                        course_start = time_to_minutes(course['times'].split(' - ')[0])
+                        course_end = time_to_minutes(course['times'].split(' - ')[1])
+                        if not (course_end <= start or course_start >= end):
+                            for k, other_course in enumerate(courses):
+                                if i != k and course['days'] == other_course['days']:
+                                    other_course_start = time_to_minutes(other_course['times'].split(' - ')[0])
+                                    other_course_end = time_to_minutes(other_course['times'].split(' - ')[1])
+                                    if not (other_course_end <= course_start or other_course_start >= course_end):
+                                        solver.Add(x[i, j] + x[k, j] <= 1)
+
+    # Objective: Maximize total preference
+    solver.Maximize(solver.Sum(professors[j]['preferences'].get(courses[i]['section_address'], 0) * x[i, j] for i in range(len(courses)) for j in range(len(professors))))
+
+    status = solver.Solve()
+
+    assignments = []
+    if status == pywraplp.Solver.OPTIMAL:
+        for i, course in enumerate(courses):
+            for j, professor in enumerate(professors):
+                if x[i, j].solution_value() == 1:
+                    assignment = {
+                        'instructor': professor['name'],
+                        'section_address': course['section_address'],
+                        'course': course['title'],
+                        'course_number': course['course_number'],
+                        'time': course['times']
+                    }
+                    assignments.append(assignment)
+    else:
+        return 'No optimal solution found!'
+
+    return assignments

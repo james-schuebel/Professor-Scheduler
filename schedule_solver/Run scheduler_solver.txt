@@ -1,0 +1,11 @@
+Run scheduler_solver:
+RUN IN POWERSHELL
+
+//Do not use this one, sss2 is the correct steps
+1.Run in terminal to activate your virtual environment: .\.venv\Scripts\activate
+2.Export the FLASK_APP environment variable with the name of your file: $env:FLASK_APP="scheduler_solver.py"
+3.Run the Flask application: python -m flask run
+
+SSS2 machine
+1.Run in terminal to activate your virtual environment: .\.venv\Scripts\activate
+2.Run the Flask application: python -m flask --app schedule_solver.py run
